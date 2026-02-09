@@ -1,60 +1,62 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم BOK - إدارة الحسابات</title>
+    <title>BOK Admin - التحكم في الجلسات</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --primary: #0056b3; --accent: #1e7e34; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; margin: 0; }
-        .card { background: white; width: 100%; max-width: 480px; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .header { text-align: center; border-bottom: 2px solid #f0f0f0; margin-bottom: 20px; padding-bottom: 10px; }
-        input { width: 100%; padding: 14px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; text-align: center; outline: none; }
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-search { background: var(--primary); color: white; }
+        :root { --primary-green: #1e7e34; --dark-blue: #003d80; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .admin-card { background: white; width: 100%; max-width: 450px; padding: 25px; border-radius: 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); border-top: 8px solid var(--primary-green); }
+        .logo-area { text-align: center; margin-bottom: 20px; }
+        .search-box { position: relative; margin-bottom: 20px; }
+        input { width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; outline: none; transition: 0.3s; text-align: center; box-sizing: border-box; }
+        input:focus { border-color: var(--primary-green); }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-search { background: var(--dark-blue); color: white; margin-bottom: 10px; }
+        .btn-update { background: var(--primary-green); color: white; margin-top: 10px; }
         
-        .info-table { display: none; margin-top: 20px; background: #fafafa; border-radius: 15px; padding: 15px; border: 1px solid #eee; }
-        .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .row:last-child { border-bottom: none; }
-        .label { color: #777; font-size: 14px; }
-        .val { color: #333; font-weight: bold; }
-
-        .balance-card { background: #e8f5e9; padding: 20px; border-radius: 15px; text-align: center; margin-top: 15px; border: 1px solid #c8e6c9; }
-        .amount { font-size: 32px; font-weight: 900; color: var(--accent); margin: 5px 0; }
-        .update-box { margin-top: 15px; display: flex; gap: 10px; }
-        .update-input { margin-bottom: 0 !important; flex: 1; }
-        .btn-add { background: var(--accent); color: white; width: auto; padding: 10px 20px; }
+        .user-details { display: none; background: #f9f9f9; padding: 20px; border-radius: 15px; margin-top: 10px; border: 1px dashed #ccc; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px; }
+        .label { color: #666; }
+        .value { color: #000; font-weight: bold; }
+        .balance-display { font-size: 30px; font-weight: 800; color: var(--primary-green); margin: 10px 0; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div class="header">
-        <h2 style="color: var(--primary); margin: 0;">نظام الاستعلام والتحديث</h2>
-        <p style="font-size: 12px; color: #888;">جدول الحسابات: account_details</p>
+<div class="admin-card">
+    <div class="logo-area">
+        <i class="fas fa-user-shield fa-3x" style="color: var(--dark-blue);"></i>
+        <h2 style="margin: 10px 0; color: var(--dark-blue);">لوحة تحكم الرصيد</h2>
+        <p style="font-size: 12px; color: #777;">الجدول المستهدف: user_session</p>
     </div>
 
-    <input type="text" id="target_acc" placeholder="أدخل رقم الحساب الكامل (16 رقم)">
-    <button class="btn btn-search" onclick="searchAccount()">بحث عن البيانات</button>
+    <div class="search-box">
+        <label style="display:block; margin-bottom:5px; font-weight:bold;">رقم الحساب:</label>
+        <input type="text" id="acc_input" placeholder="أدخل رقم الحساب">
+    </div>
+    <button class="btn btn-search" onclick="findUser()">جلب بيانات الجلسة</button>
 
-    <div id="info_section" class="info-table">
-        <div class="row"><span class="label">اسم الحساب:</span> <span id="view_name" class="val">-</span></div>
-        <div class="row"><span class="label">نوع الحساب:</span> <span id="view_type" class="val">-</span></div>
-        <div class="row"><span class="label">الفرع:</span> <span id="view_branch" class="val">-</span></div>
-        <div class="row"><span class="label">الحساب المختصر:</span> <span id="view_short" class="val">-</span></div>
+    <div id="result_area" class="user-details">
+        <div class="info-row">
+            <span class="label">رقم الحساب الكامل:</span>
+            <span id="full_acc_val" class="value">-</span>
+        </div>
+        
+        <div style="text-align:center; margin: 15px 0;">
+            <span class="label">الرصيد الحالي في Firebase</span>
+            <div id="bal_val" class="balance-display">0.00</div>
+            <span style="font-size: 12px; color: #999;">SDG (جنيه سوداني)</span>
+        </div>
 
-        <div class="balance-card">
-            <div class="label">الرصيد المتاح</div>
-            <div id="view_balance" class="amount">0.00 SDG</div>
-            
-            <div class="update-box">
-                <input type="number" id="add_val" class="update-input" placeholder="إضافة مبلغ..">
-                <button class="btn btn-add" onclick="updateBalance()">إضافة</button>
-            </div>
+        <div style="border-top: 1px solid #eee; pt-15px; margin-top:15px;">
+            <label style="display:block; margin-bottom:5px; font-size:14px;">المبلغ المراد إضافته (+)</label>
+            <input type="number" id="add_amount" placeholder="0.00" style="background: #fff;">
+            <button class="btn btn-update" onclick="applyUpdate()">تأكيد زيادة الرصيد</button>
         </div>
     </div>
 </div>
@@ -70,46 +72,48 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let userPath = "";
-    let currentBal = 0;
+    let currentKey = null;
+    let currentBalance = 0;
 
-    function searchAccount() {
-        const acc = document.getElementById('target_acc').value;
-        if(!acc) return alert("أدخل رقم الحساب أولاً");
+    function findUser() {
+        const acc = document.getElementById('acc_input').value;
+        if(!acc) return alert("يرجى كتابة رقم الحساب");
 
-        // البحث في جدول account_details بناءً على حقل full_account_number
-        db.ref('account_details').orderByChild('full_account_number').equalTo(acc).once('value', (snapshot) => {
+        // البحث في جدول user_session بناءً على كود الـ Smali الخاص بك
+        db.ref('user_session').orderByChild('account_number').equalTo(acc).once('value', (snapshot) => {
             if(snapshot.exists()) {
                 snapshot.forEach(child => {
+                    currentKey = child.key;
                     const data = child.val();
-                    userPath = 'account_details/' + child.key;
-                    currentBal = parseFloat(data.balance) || 0;
+                    currentBalance = parseFloat(data.balance) || 0;
 
-                    document.getElementById('view_name').innerText = data.name || "غير معروف";
-                    document.getElementById('view_type').innerText = data.account_type || "جاري";
-                    document.getElementById('view_branch').innerText = data.branch || "الرئيسي";
-                    document.getElementById('view_short').innerText = data.short_account_number || "-";
-                    document.getElementById('view_balance').innerText = currentBal.toLocaleString() + " SDG";
+                    // عرض البيانات مع محاكاة تنسيق التطبيق (0011 + acc + 0001)
+                    document.getElementById('full_acc_val').innerText = "0011" + acc + "0001";
+                    document.getElementById('bal_val').innerText = currentBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
                     
-                    document.getElementById('info_section').style.display = 'block';
+                    document.getElementById('result_area').style.display = 'block';
                 });
             } else {
-                alert("رقم الحساب غير موجود في جدول account_details");
-                document.getElementById('info_section').style.display = 'none';
+                alert("لم يتم العثور على جلسة لهذا الحساب في جدول user_session");
+                document.getElementById('result_area').style.display = 'none';
             }
         });
     }
 
-    function updateBalance() {
-        const amount = parseFloat(document.getElementById('add_val').value);
-        if(!amount || amount <= 0) return alert("أدخل مبلغ صحيح");
+    function applyUpdate() {
+        const add = parseFloat(document.getElementById('add_amount').value);
+        if(!add || add <= 0) return alert("أدخل مبلغاً صحيحاً");
 
-        const newTotal = currentBal + amount;
-        db.ref(userPath).update({ balance: newTotal }).then(() => {
-            alert("تمت عملية الزيادة بنجاح");
-            searchAccount();
-            document.getElementById('add_val').value = "";
-        });
+        const newBal = currentBalance + add;
+
+        // التحديث مباشرة في المسار الصحيح
+        db.ref('user_session/' + currentKey).update({
+            balance: newBal
+        }).then(() => {
+            alert("تم تحديث الرصيد بنجاح في قاعدة البيانات");
+            findUser(); // إعادة تحميل البيانات
+            document.getElementById('add_amount').value = "";
+        }).catch(e => alert("خطأ: " + e.message));
     }
 </script>
 

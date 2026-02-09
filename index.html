@@ -3,37 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOK Admin - Diagnostic Tool</title>
+    <title>BOK - Comprehensive Search</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; direction: rtl; }
-        .card { background: white; max-width: 500px; margin: auto; padding: 20px; border-radius: 15px; shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-search { background: #003d80; color: white; }
-        .btn-update { background: #1e7e34; color: white; margin-top: 10px; }
-        .log { background: #333; color: #0f0; padding: 10px; border-radius: 5px; font-size: 12px; margin-top: 10px; height: 100px; overflow-y: auto; text-align: left; direction: ltr; }
-        .result { display: none; margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f4f7f9; direction: rtl; padding: 20px; }
+        .card { background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .log-screen { background: #222; color: #0f0; font-family: monospace; padding: 10px; border-radius: 8px; font-size: 11px; margin-top: 15px; height: 120px; overflow-y: auto; text-align: left; direction: ltr; }
+        input { width: 100%; padding: 15px; margin-top: 10px; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; text-align: center; }
+        .btn { width: 100%; padding: 15px; margin-top: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .btn-search { background: #0056b3; color: white; }
+        .btn-update { background: #28a745; color: white; }
+        .result-panel { display: none; margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>فحص وتحديث الرصيد</h2>
-    <input type="text" id="acc_input" placeholder="أدخل رقم الحساب">
-    <button class="btn btn-search" onclick="smartSearch()">بدء عملية البحث الشامل</button>
+    <h2 style="text-align:center; color:#0056b3;">المستكشف الذكي للقاعدة</h2>
+    <p style="font-size:13px; color:#666; text-align:center;">سأبحث في كل المجلدات عن رقم الحساب</p>
+    
+    <input type="text" id="acc_num" placeholder="أدخل رقم الحساب">
+    <button class="btn btn-search" onclick="startDeepSearch()">بدء البحث العميق</button>
 
-    <div id="log" class="log">بانتظار إدخال رقم الحساب...</div>
+    <div id="log" class="log-screen">Ready...</div>
 
-    <div id="result_area" class="result">
-        <p>تم العثور على المسار: <br><span id="path_found" style="color:blue; font-size:12px;"></span></p>
-        <div style="text-align:center;">
-            <span style="color:#666;">الرصيد الحالي:</span>
-            <h1 id="bal_val" style="color:#1e7e34; margin:5px 0;">0.00</h1>
+    <div id="res_area" class="result-panel">
+        <div style="background:#f9f9f9; padding:15px; border-radius:10px; text-align:center;">
+            <p style="margin:0; color:#888;">الرصيد المكتشف:</p>
+            <h1 id="view_bal" style="margin:10px 0; color:#28a745;">0.00</h1>
+            <p style="font-size:11px; color:blue;">المسار: <span id="view_path"></span></p>
         </div>
-        <input type="number" id="add_amount" placeholder="المبلغ المراد إضافته">
-        <button class="btn btn-update" onclick="updateNow()">تحديث الرصيد الآن</button>
+        
+        <input type="number" id="new_add" placeholder="المبلغ المضاف (+)">
+        <button class="btn btn-update" onclick="applyUpdate()">تحديث الآن</button>
     </div>
 </div>
 
@@ -48,82 +51,78 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let finalPath = "";
-    let currentBalance = 0;
+    let foundPath = "";
+    let foundBal = 0;
 
-    function addLog(msg) {
-        const log = document.getElementById('log');
-        log.innerHTML += "> " + msg + "<br>";
-        log.scrollTop = log.scrollHeight;
+    function log(m) {
+        const l = document.getElementById('log');
+        l.innerHTML += "> " + m + "<br>";
+        l.scrollTop = l.scrollHeight;
     }
 
-    async function smartSearch() {
-        const acc = document.getElementById('acc_input').value;
-        if(!acc) return alert("أدخل الرقم");
+    function startDeepSearch() {
+        const target = document.getElementById('acc_num').value;
+        if(!target) return alert("أدخل رقم الحساب");
         
-        document.getElementById('log').innerHTML = ""; // مسح السجل
-        addLog("بدء البحث عن الحساب: " + acc);
+        document.getElementById('log').innerHTML = "";
+        document.getElementById('res_area').style.display = 'none';
+        log("Searching for: " + target);
 
-        // المحاولة 1: البحث في جدول user_session
-        addLog("محاولة البحث في مجلد 'user_session'...");
-        db.ref('user_session').orderByChild('account_number').equalTo(acc).once('value', (s) => {
-            if(s.exists()) {
-                proceed(s, 'user_session');
-            } else {
-                addLog("فشل البحث في 'user_session'.");
-                
-                // المحاولة 2: البحث في الجذر الرئيسي مباشرة
-                addLog("محاولة البحث في الجذر الرئيسي (Root)...");
-                db.ref().orderByChild('account_number').equalTo(acc).once('value', (s2) => {
-                    if(s2.exists()) {
-                        proceed(s2, 'Root');
-                    } else {
-                        // المحاولة 3: البحث عن المجلد الذي اسمه هو رقم الحساب
-                        addLog("محاولة البحث عن مجلد باسم رقم الحساب نفسه...");
-                        db.ref(acc).once('value', (s3) => {
-                            if(s3.exists()) {
-                                directProceed(s3, acc);
-                            } else {
-                                addLog("للأسف، لم يتم العثور على الرقم في أي مكان.");
-                                alert("لم نجد بيانات لهذا الرقم. تأكد من وجوده في Firebase بنفس المسمى.");
-                            }
-                        });
+        // جلب القاعدة كاملة لفحصها يدوياً (هذا يضمن إيجاد الرقم أينما كان)
+        db.ref().once('value', (snap) => {
+            const data = snap.val();
+            let found = false;
+
+            if(!data) return log("Error: Database is empty!");
+
+            // البحث في كل المجلدات الرئيسية
+            for (let rootKey in data) {
+                log("Checking folder: " + rootKey);
+                const folder = data[rootKey];
+
+                // إذا كان المجلد نفسه هو رقم الحساب
+                if (rootKey === target) {
+                    foundPath = rootKey;
+                    foundBal = parseFloat(folder.balance) || 0;
+                    found = true;
+                    break;
+                }
+
+                // البحث داخل محتويات المجلد (إذا كان يحتوي على حقل account_number)
+                if (typeof folder === 'object') {
+                    for (let subKey in folder) {
+                        const user = folder[subKey];
+                        if (user && (user.account_number == target || user.full_account_number == target)) {
+                            foundPath = rootKey + "/" + subKey;
+                            foundBal = parseFloat(user.balance) || 0;
+                            found = true;
+                            break;
+                        }
                     }
-                });
+                }
+                if(found) break;
             }
-        });
+
+            if(found) {
+                log("SUCCESS: Found at " + foundPath);
+                document.getElementById('view_path').innerText = foundPath;
+                document.getElementById('view_bal').innerText = foundBal.toLocaleString();
+                document.getElementById('res_area').style.display = 'block';
+            } else {
+                log("FAILED: Account not found in any folder.");
+                alert("لم يتم العثور على الحساب. تأكد أن رقم الحساب مخزن في حقل اسمه account_number");
+            }
+        }).catch(e => log("Permission Error: " + e.message));
     }
 
-    function proceed(snapshot, tableName) {
-        snapshot.forEach(child => {
-            finalPath = (tableName === 'Root' ? '' : tableName + '/') + child.key;
-            currentBalance = parseFloat(child.val().balance) || 0;
-            display();
-            addLog("نجاح! تم العثور على البيانات في " + tableName);
-        });
-    }
-
-    function directProceed(snapshot, path) {
-        finalPath = path;
-        currentBalance = parseFloat(snapshot.val().balance) || 0;
-        display();
-        addLog("نجاح! تم العثور على المسار المباشر.");
-    }
-
-    function display() {
-        document.getElementById('path_found').innerText = finalPath;
-        document.getElementById('bal_val').innerText = currentBalance.toLocaleString();
-        document.getElementById('result_area').style.display = 'block';
-    }
-
-    function updateNow() {
-        const amount = parseFloat(document.getElementById('add_amount').value);
-        if(!amount) return;
-
-        db.ref(finalPath).update({ balance: currentBalance + amount })
+    function applyUpdate() {
+        const val = parseFloat(document.getElementById('new_add').value);
+        if(!val) return;
+        
+        db.ref(foundPath).update({ balance: foundBal + val })
         .then(() => {
-            alert("تم التحديث!");
-            smartSearch();
+            alert("تم التحديث بنجاح!");
+            startDeepSearch();
         });
     }
 </script>

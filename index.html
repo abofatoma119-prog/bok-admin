@@ -1,130 +1,103 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
- 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MOKA AGENT PANEL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOKA PANEL | Advanced Control</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
-        body {
-            background: #f0f2f5;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
- 
-        .top-bar {
-            background: #1a1a1a;
-            color: #d4af37;
-            padding: 15px;
-            border-bottom: 2px solid #d4af37;
-        }
- 
-        .card {
-            border: none;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            transition: 0.3s;
-        }
- 
-        .card:hover {
-            transform: translateY(-5px);
-        }
- 
-        .btn-success {
-            background-color: #28a745;
-            border: none;
-        }
- 
-        .btn-primary {
-            background-color: #007bff;
-            border: none;
-        }
- 
-        .btn-warning {
-            background-color: #d4af37;
-            color: #000;
-            border: none;
-        }
+        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .top-bar { background: #1a1a1a; color: #d4af37; padding: 15px; border-bottom: 2px solid #d4af37; }
+        .card { border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 12px; }
+        .log-screen { background: #000; color: #00ff00; font-family: monospace; padding: 10px; border-radius: 8px; font-size: 12px; height: 100px; overflow-y: auto; margin-bottom: 15px; text-align: left; direction: ltr; }
+        .result-box { display: none; background: #e9ecef; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
     </style>
 </head>
- 
 <body>
- 
-    <div class="top-bar mb-4 shadow d-flex justify-content-between container-fluid align-items-center">
-        <h5 class="mb-0">MOKA PANEL | وكيل: Ali Osman</h5>
-        <div>
-            <span class="me-3">رصيدك: <span class="badge bg-warning text-dark fs-6">10,000.00</span></span>
-            <a href="?logout=1" class="btn btn-outline-danger btn-sm fw-bold">تسجيل خروج</a>
-        </div>
+
+<div class="top-bar mb-4 shadow d-flex justify-content-between container-fluid align-items-center">
+    <h5 class="mb-0">MOKA PANEL | التحكم الذكي</h5>
+    <div>
+        <span class="badge bg-warning text-dark fs-6">متصل بالقاعدة</span>
     </div>
- 
-    <div class="container">
- 
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card p-4">
-                    <h6 class="fw-bold text-success mb-3 border-bottom pb-2">💰 شحن رصيد مستخدم</h6>
-                    <form method="post" action="/bankak/MOKA/wakil_moka.php">
-                        <input type="hidden" name="operation" value="recharge">
-                        <label class="small fw-bold">رقم الحساب:</label>
-                        <input type="text" name="target_account" class="form-control mb-2" placeholder="أدخل رقم الحساب" required>
-                        <label class="small fw-bold">المبلغ:</label>
-                        <input type="number" name="amount" class="form-control mb-3" placeholder="0.00" step="0.01" required>
-                        <button type="submit" class="btn btn-success w-100 fw-bold shadow-sm">تأكيد عملية الشحن</button>
-                    </form>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-4">
+                <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">🔍 البحث العميق والتحديث</h6>
+                
+                <div id="log" class="log-screen">System Ready...</div>
+
+                <div class="input-group mb-3">
+                    <input type="text" id="acc_num" class="form-control" placeholder="أدخل رقم الحساب">
+                    <button class="btn btn-primary" onclick="runSearch()">بدء البحث</button>
                 </div>
-            </div>
- 
-            <div class="col-md-4">
-                <div class="card p-4">
-                    <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">📝 تعديل بيانات العميل</h6>
-                    <form method="post" action="/bankak/MOKA/wakil_moka.php">
-                        <input type="hidden" name="operation" value="update_info">
-                        <label class="small fw-bold">رقم الحساب:</label>
-                        <input type="text" name="target_account" class="form-control mb-2" placeholder="رقم العميل" required>
-                        <label class="small fw-bold">الاسم الجديد:</label>
-                        <input type="text" name="new_name" class="form-control mb-2" placeholder="الاسم الجديد" required>
-                        <label class="small fw-bold">الباسورد الجديد:</label>
-                        <input type="text" name="new_password" class="form-control mb-3" placeholder="كلمة المرور" required>
-                        <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">حفظ التعديلات</button>
-                    </form>
-                </div>
-            </div>
- 
-            <div class="col-md-4">
-                <div class="card p-4 h-100">
-                    <h6 class="fw-bold text-danger mb-3 border-bottom pb-2">🛡️ الحظر والجهاز</h6>
- 
-                    <form method="post" action="/bankak/MOKA/wakil_moka.php" class="mb-4">
-                        <input type="hidden" name="operation" value="toggle_ban">
-                        <label class="small fw-bold">إدارة الحظر:</label>
-                        <div class="input-group">
-                            <input type="text" name="target_account" class="form-control" placeholder="رقم العميل" required>
-                            <select name="status" class="form-select">
-                                <option value="1">حظر</option>
-                                <option value="0">فك حظر</option>
-                            </select>
-                            <button type="submit" class="btn btn-dark">نفذ</button>
-                        </div>
-                    </form>
- 
-                    <form method="post" action="/bankak/MOKA/wakil_moka.php">
-                        <input type="hidden" name="operation" value="delete_device">
-                        <label class="small fw-bold">تغيير جهاز العميل:</label>
-                        <div class="input-group">
-                            <input type="text" name="target_account" class="form-control" placeholder="رقم العميل" required>
-                            <button type="submit" class="btn btn-warning fw-bold">حذف Device ID</button>
-                        </div>
-                        <small class="text-muted" style="font-size: 10px;">استخدم هذا ليتمكن العميل من الدخول من هاتف آخر.</small>
-                    </form>
+
+                <div id="res_area" class="result-box">
+                    <p class="small mb-1 text-muted">الاسم: <strong id="view_name" class="text-dark"></strong></p>
+                    <p class="small mb-2 text-muted">الرصيد: <strong id="view_bal" class="text-success"></strong></p>
+                    <hr>
+                    <input type="number" id="new_amount" class="form-control mb-2" placeholder="المبلغ المضاف (+)">
+                    <button class="btn btn-success w-100" onclick="runUpdate()">تأكيد الشحن</button>
                 </div>
             </div>
         </div>
- 
-        <footer class="text-center mt-5 pb-4 text-muted small">
-            نظام MOKA المطور © 2026 - لوحة تحكم الوكلاء
-        </footer>
     </div>
+</div>
+
+<script>
+    let activeAcc = "";
+
+    function writeLog(msg) {
+        const l = document.getElementById('log');
+        l.innerHTML += "> " + msg + "<br>";
+        l.scrollTop = l.scrollHeight;
+    }
+
+    function runSearch() {
+        const acc = document.getElementById('acc_num').value;
+        if(!acc) return;
+
+        writeLog("Searching for account: " + acc);
+        fetch('db_logic.php?action=search&acc=' + acc)
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                activeAcc = acc;
+                document.getElementById('view_name').innerText = data.full_name;
+                document.getElementById('view_bal').innerText = data.balance.toLocaleString() + " SDG";
+                document.getElementById('res_area').style.display = 'block';
+                writeLog("SUCCESS: Data retrieved.");
+            } else {
+                writeLog("ERROR: Account not found.");
+                alert("الحساب غير موجود");
+            }
+        });
+    }
+
+    function runUpdate() {
+        const amt = document.getElementById('new_amount').value;
+        if(!amt || !activeAcc) return;
+
+        writeLog("Processing update...");
+        const params = new URLSearchParams();
+        params.append('acc', activeAcc);
+        params.append('amount', amt);
+
+        fetch('db_logic.php?action=update', { method: 'POST', body: params })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                writeLog("DONE: Balance updated.");
+                alert("تم الشحن بنجاح");
+                runSearch();
+            } else {
+                writeLog("FAIL: Update rejected.");
+            }
+        });
+    }
+</script>
 </body>
- 
 </html>
